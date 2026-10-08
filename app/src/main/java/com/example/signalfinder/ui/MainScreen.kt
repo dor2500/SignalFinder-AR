@@ -21,6 +21,8 @@ import com.example.signalfinder.ar.ArOverlayView
 import com.example.signalfinder.scanner.SignalHud
 import com.example.signalfinder.speedtest.SpeedTestEngine
 import com.example.signalfinder.speedtest.SpeedTestGauge
+import com.example.signalfinder.updater.GitHubUpdater
+import com.example.signalfinder.updater.UpdateInfo
 import kotlinx.coroutines.launch
 
 @Composable
@@ -31,6 +33,15 @@ fun MainScreen() {
     
     // Toggle for Indoor (Wi-Fi) vs Outdoor (5G)
     var isIndoorMode by remember { mutableStateOf(false) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    var updateInfo by remember { mutableStateOf<UpdateInfo?>(null) }
+
+    // Real OTA Update notification
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(2000)
+        updateInfo = GitHubUpdater.checkForUpdate()
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         ArOverlayView(modifier = Modifier.fillMaxSize(), isIndoorMode = isIndoorMode)
@@ -113,6 +124,32 @@ fun MainScreen() {
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(top = 12.dp)
+            )
+        }
+
+        // In-App OTA Update Dialog
+        updateInfo?.let { info ->
+            AlertDialog(
+                onDismissRequest = { updateInfo = null },
+                containerColor = Color(0xFF222233),
+                title = { Text("עדכון גרסה ${info.version} זמין! 🚀", color = Color.White, fontWeight = FontWeight.Bold) },
+                text = { Text(info.releaseNotes, color = Color(0xFFCCCCCC)) },
+                confirmButton = {
+                    Button(
+                        onClick = { 
+                            GitHubUpdater.openDownloadUrl(context, info.downloadUrl)
+                            updateInfo = null 
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E676))
+                    ) {
+                        Text("הורד והתקן עכשיו", color = Color.Black, fontWeight = FontWeight.Bold)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { updateInfo = null }) {
+                        Text("הזכר לי מאוחר יותר", color = Color.Gray)
+                    }
+                }
             )
         }
     }
