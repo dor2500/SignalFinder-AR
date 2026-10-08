@@ -24,13 +24,10 @@ import kotlinx.coroutines.delay
 import kotlin.math.sin
 
 @Composable
-fun ArOverlayView(modifier: Modifier = Modifier) {
+fun ArOverlayView(modifier: Modifier = Modifier, isIndoorMode: Boolean = false) {
     Box(modifier = modifier) {
-        // 1. Live Camera Feed
         CameraPreviewView(modifier = Modifier.fillMaxSize())
-        
-        // 2. AR Directional Arrow Overlay
-        NavigationArrowOverlay()
+        NavigationArrowOverlay(isIndoorMode)
     }
 }
 
@@ -55,16 +52,10 @@ fun CameraPreviewView(modifier: Modifier = Modifier) {
                 val preview = Preview.Builder().build().also {
                     it.setSurfaceProvider(previewView.surfaceProvider)
                 }
-
                 val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
                 try {
                     cameraProvider.unbindAll()
-                    cameraProvider.bindToLifecycle(
-                        lifecycleOwner,
-                        cameraSelector,
-                        preview
-                    )
+                    cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, preview)
                 } catch (exc: Exception) {
                     exc.printStackTrace()
                 }
@@ -76,16 +67,19 @@ fun CameraPreviewView(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun NavigationArrowOverlay() {
-    // Simulating the arrow pointing towards the "Best Signal Location"
+fun NavigationArrowOverlay(isIndoorMode: Boolean) {
     var angle by remember { mutableStateOf(0f) }
     var distance by remember { mutableStateOf(15.0f) }
+    
+    LaunchedEffect(isIndoorMode) {
+        distance = if (isIndoorMode) 8.0f else 300.0f
+    }
     
     LaunchedEffect(Unit) {
         var time = 0f
         while (true) {
-            angle = (sin(time) * 30f) // Arrow sways slightly to indicate tracking
-            distance = maxOf(0f, 15.0f - (time * 0.5f)) // Simulate getting closer
+            angle = (sin(time) * 30f)
+            distance = maxOf(0f, distance - (if(distance > 20f) 5f else 0.2f))
             time += 0.1f
             delay(100)
         }
@@ -96,29 +90,27 @@ fun NavigationArrowOverlay() {
             Canvas(modifier = Modifier.size(160.dp)) {
                 rotate(degrees = angle) {
                     val path = Path().apply {
-                        moveTo(size.width / 2f, 0f) // Top point
-                        lineTo(size.width, size.height) // Bottom right
-                        lineTo(size.width / 2f, size.height * 0.7f) // Inner center
-                        lineTo(0f, size.height) // Bottom left
+                        moveTo(size.width / 2f, 0f)
+                        lineTo(size.width, size.height)
+                        lineTo(size.width / 2f, size.height * 0.7f)
+                        lineTo(0f, size.height)
                         close()
                     }
-                    // Color gets more green as you get closer
-                    val color = if (distance < 5f) Color.Green else Color(0xFFFFCC00) // Yellowish
+                    val color = if (distance < 5f) Color.Green else Color(0xFFFFCC00)
                     drawPath(path, color = color.copy(alpha = 0.85f))
                 }
             }
             
             Spacer(modifier = Modifier.height(24.dp))
             
+            val targetName = if (isIndoorMode) "לראוטר האלחוטי" else "לאנטנה הסלולרית"
+            
             Text(
-                text = if (distance < 1f) "הגעת לנקודה הטובה ביותר!" else "עקוב אחרי החץ\nמרחק: ${"%.1f".format(distance)} מטרים",
+                text = if (distance < 1f) "הגעת לנקודה הטובה ביותר!" else "כוון $targetName\nמרחק: ${"%.1f".format(distance)} מטרים",
                 color = if (distance < 5f) Color.Green else Color(0xFFFFCC00),
                 fontSize = 24.sp,
                 style = androidx.compose.ui.text.TextStyle(
-                    shadow = androidx.compose.ui.graphics.Shadow(
-                        color = Color.Black,
-                        blurRadius = 12f
-                    )
+                    shadow = androidx.compose.ui.graphics.Shadow(color = Color.Black, blurRadius = 12f)
                 ),
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )

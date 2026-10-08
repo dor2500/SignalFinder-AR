@@ -3,6 +3,7 @@ package com.example.signalfinder.ui
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -10,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -20,7 +22,6 @@ import com.example.signalfinder.scanner.SignalHud
 import com.example.signalfinder.speedtest.SpeedTestEngine
 import com.example.signalfinder.speedtest.SpeedTestGauge
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 
 @Composable
 fun MainScreen() {
@@ -28,18 +29,12 @@ fun MainScreen() {
     val speedTestEngine = remember { SpeedTestEngine() }
     val testResult by speedTestEngine.result.collectAsState()
     
-    var showUpdateDialog by remember { mutableStateOf(false) }
-
-    // Simulating OTA Update notification
-    LaunchedEffect(Unit) {
-        delay(2500)
-        showUpdateDialog = true
-    }
+    // Toggle for Indoor (Wi-Fi) vs Outdoor (5G)
+    var isIndoorMode by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        ArOverlayView(modifier = Modifier.fillMaxSize())
+        ArOverlayView(modifier = Modifier.fillMaxSize(), isIndoorMode = isIndoorMode)
         
-        // Gradient overlay for UI readability
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -53,11 +48,39 @@ fun MainScreen() {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 48.dp, bottom = 48.dp),
+                .padding(top = 40.dp, bottom = 48.dp),
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            SignalHud()
+            
+            // Mode Switcher
+            TabRow(
+                selectedTabIndex = if (isIndoorMode) 1 else 0,
+                containerColor = Color(0x66000000),
+                contentColor = Color.Cyan,
+                modifier = Modifier
+                    .padding(horizontal = 32.dp, vertical = 8.dp)
+                    .clip(RoundedCornerShape(16.dp))
+            ) {
+                Tab(
+                    selected = !isIndoorMode, 
+                    onClick = { isIndoorMode = false }, 
+                    text = { Text("בחוץ (5G)", fontWeight = FontWeight.Bold) },
+                    selectedContentColor = Color.White,
+                    unselectedContentColor = Color.Gray
+                )
+                Tab(
+                    selected = isIndoorMode, 
+                    onClick = { isIndoorMode = true }, 
+                    text = { Text("בבית (Wi-Fi)", fontWeight = FontWeight.Bold) },
+                    selectedContentColor = Color.White,
+                    unselectedContentColor = Color.Gray
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+
+            SignalHud(isIndoorMode = isIndoorMode)
             
             Spacer(modifier = Modifier.weight(1f))
 
@@ -90,29 +113,6 @@ fun MainScreen() {
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(top = 12.dp)
-            )
-        }
-
-        // In-App OTA Update Dialog
-        if (showUpdateDialog) {
-            AlertDialog(
-                onDismissRequest = { showUpdateDialog = false },
-                containerColor = Color(0xFF222233),
-                title = { Text("עדכון גרסה זמין! 🚀", color = Color.White, fontWeight = FontWeight.Bold) },
-                text = { Text("גרסה 2.0 של SignalFinder מוכנה. העדכון כולל ממשק משתמש חדש לגמרי, בדיקת מהירות שפועלת בזמן אמת, ותיקוני באגים.\nהורד עכשיו כדי ליהנות מהעיצוב החדש!", color = Color(0xFFCCCCCC)) },
-                confirmButton = {
-                    Button(
-                        onClick = { showUpdateDialog = false },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E676))
-                    ) {
-                        Text("התקן עדכון עכשיו", color = Color.Black, fontWeight = FontWeight.Bold)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showUpdateDialog = false }) {
-                        Text("הזכר לי מאוחר יותר", color = Color.Gray)
-                    }
-                }
             )
         }
     }
