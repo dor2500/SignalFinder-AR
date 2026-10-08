@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -55,6 +56,20 @@ fun MainScreen() {
                     )
                 )
         )
+
+        IconButton(
+            onClick = { /* TODO: Open settings */ },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+                .padding(top = 24.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Settings,
+                contentDescription = "הגדרות",
+                tint = Color.White
+            )
+        }
 
         Column(
             modifier = Modifier
@@ -124,6 +139,12 @@ fun MainScreen() {
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(top = 12.dp)
+            )
+            Text(
+                text = "גרסה 1.0",
+                color = Color.Gray,
+                fontSize = 12.sp,
+                modifier = Modifier.padding(top = 4.dp)
             )
         }
 

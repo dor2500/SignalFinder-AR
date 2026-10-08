@@ -52,8 +52,35 @@ fun SignalHud(isIndoorMode: Boolean) {
                 Text(if (isIndoorMode) "Home_Network_5G" else "HOT Mobile", color = Color(0xFFB0BEC5), fontSize = 16.sp)
             }
             Column(horizontalAlignment = Alignment.End) {
-                Text("ציון: ${if (isIndoorMode) "92" else "85"}", color = Color(0xFF00E676), fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                Text(if (isIndoorMode) "RSSI: -45 dBm" else "RSRP: -85 dBm", color = Color.White, fontSize = 14.sp)
+                // Simulated indoor RSSI based on proximity
+                var simulatedRssi by remember { mutableStateOf(-75) }
+                LaunchedEffect(isIndoorMode) {
+                    if (isIndoorMode) {
+                        var goingUp = true
+                        while(true) {
+                            delay(1000)
+                            if (goingUp) {
+                                simulatedRssi += 5
+                                if (simulatedRssi >= -35) goingUp = false
+                            } else {
+                                simulatedRssi -= 5
+                                if (simulatedRssi <= -75) goingUp = true
+                            }
+                        }
+                    }
+                }
+
+                // Dynamic score calculation
+                val score = if (isIndoorMode) {
+                    // Indoor score based on router proximity
+                    (100 - (Math.abs(simulatedRssi) - 30) * 2).coerceIn(0, 100)
+                } else {
+                    // Outdoor score as defined
+                    85
+                }
+                
+                Text("ציון: $score", color = Color(0xFF00E676), fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                Text(if (isIndoorMode) "RSSI: $simulatedRssi dBm" else "RSRP: -85 dBm", color = Color.White, fontSize = 14.sp)
             }
         }
         
