@@ -141,7 +141,7 @@ fun MainScreen() {
                 modifier = Modifier.padding(top = 12.dp)
             )
             Text(
-                text = "גרסה 1.1",
+                text = "גרסה 2.0.0",
                 color = Color.Gray,
                 fontSize = 12.sp,
                 modifier = Modifier.padding(top = 4.dp)
